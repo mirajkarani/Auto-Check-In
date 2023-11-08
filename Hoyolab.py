@@ -23,11 +23,16 @@ discordUserName = config.discordUserName
 
 
 class Discord:
-    async def send(self, data: dict, logged = False):
+
+    def __init__(self, data: dict, logged: bool):
+        self.data = data
+        self.logged = logged
+
+    async def send(self):
         
-        if logged == True:    
+        if self.logged == True:    
             embed = discord.Embed(
-                        description = data['message'],
+                        description = self.data['message'],
                         color = 0xBB0BB5,
             )
             
@@ -39,7 +44,7 @@ class Discord:
                 await webhook.send(embed = embed, username = discordUserName, avatar_url = avatarLink)
         else:    
             embed = discord.Embed(
-                description = f"Today's reward: {data['award']['name']} x{data['award']['count']}\nTotal signed: {data['signed']}",
+                description = f"Today's reward: {self.data['award']['name']} x{self.data['award']['count']}\nTotal signed: {self.data['signed']}",
                 color = 0xBB0BB5,
             )
 
@@ -122,18 +127,18 @@ class Hoyo:
                 "missed": info['sign_cnt_missed']
         }
 
-        discord = Discord()
-
-        if data['issigned']:
-            msg = {"message": f"You've already checked in today, {playerTitle}~"}
-            await discord.send(msg, True)
-            print(f"You've already checked in today, {playerTitle}~")
-
         total_signed = data['total']
+
         award_data = {
             "name": awards[total_signed]['name'],
             "count": awards[total_signed]['cnt']
-        }
+        }    
+
+        if data['issigned']:
+            msg = {"message": f"You've already checked in today, {playerTitle}~"}
+            discord = Discord(msg, True)
+            await discord.send()
+            print(f"You've already checked in today, {playerTitle}~")
 
         Sign = await Hoyo.sign()
                 
@@ -145,10 +150,8 @@ class Hoyo:
                 print("No webhook provided")
                 return True
             awrd = {"signed": data['total'], "award": award_data}
-            await discord.send(awrd)
+            discord = Discord(awrd, False)
+            await discord.send()
 
 
 asyncio.run(Hoyo.run())
-
-
-
